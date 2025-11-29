@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Portal - Restricted Access</title>
+    <style>
+        body { background: #222; color: #ddd; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { border: 1px solid #444; padding: 40px; border-radius: 8px; background: #333; }
+        input { display: block; width: 100%; margin: 10px 0; padding: 8px; background: #111; border: 1px solid #555; color: white; }
+        button { width: 100%; padding: 10px; background: #d32f2f; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .alert { color: #ff5252; margin-bottom: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2 style="text-align: center;">SYSTEM ADMIN</h2>
+        {% if error %} <div class="alert">{{ error }}</div> {% endif %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">AUTHENTICATE</button>
+        </form>
+    </div>
+</body>
+</html>
