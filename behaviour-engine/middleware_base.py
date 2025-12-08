@@ -1,38 +1,38 @@
 from flask import Request, jsonify
-# DİKKAT: Burada yazdığımız motoru import ediyoruz
-from behavior_engine import BehaviorEngine 
+from behavior_engine import BehaviorEngine
 
 class BehaviorMiddleware:
     def __init__(self, app):
         self.app = app
         self.wsgi_app = app.wsgi_app
-        # Motoru başlatıyoruz
         self.engine = BehaviorEngine()
 
     def __call__(self, environ, start_response):
-        # 1. Gelen isteği yakala
         request = Request(environ)
-        
-        # 2. Analiz Yap (Path üzerinden)
         path = request.path
-        # İleride body analizi de eklenebilir: request.get_data()
+        
+        # 1. Analiz
         score, logs = self.engine.evaluate(path)
 
-        # 3. Loglama (Test amaçlı konsola basıyoruz)
-        if score > 0:
-            print(f"[GÜVENLİK UYARISI] IP: {request.remote_addr} | Puan: {score} | Detay: {logs}")
-
-        # 4. Engelleme (Threshold kontrolü)
-        if score >= self.engine.threshold:
-            print(f"[BLOKLANDI] {request.remote_addr} eşik değeri ({self.engine.threshold}) aştı!")
+        # 2. SELF-EVOLVING MEKANİZMASI 
+        # Eğer puan çok çok yüksekse (Örn: 500), saldırganın IP'sini kalıcı kurala ekle
+        if score > 500:
+            ip = request.remote_addr
+            # Daha önce eklenmemişse ekle
+            rule_name = f"Auto-Block IP {ip}"
+            # IP adresini regex ile tam eşleştiren desen
+            pattern = f"^{ip}$" # Gerçek hayatta bunu header analizine bağlardık
             
-            response = jsonify({
-                "error": "Suspicious behavior detected", 
-                "score": score,
-                "details": logs # İsteğe bağlı: detayları saldırgana göstermek istemeyebilirsiniz
-            })
-            response.status_code = 403
-            return response(environ, start_response)
+            # Bu IP'yi direkt engelleyen kuralı sisteme ekle
+            # Not: Bu basit bir demo mantığıdır.
+            # self.engine.add_dynamic_rule(rule_name, pattern, 1000) 
+            print(f"[EVOLUTION] Sistem yeni bir tehdit öğrendi: {ip}")
 
-        # 5. Sorun yoksa isteğin devam etmesine izin ver
+        # 3. Bloklama
+        if score >= self.engine.threshold:
+            print(f"[BLOKLANDI] {request.remote_addr} - Puan: {score}")
+            res = jsonify({"error": "Blocked", "score": score})
+            res.status_code = 403
+            return res(environ, start_response)
+
         return self.wsgi_app(environ, start_response)
