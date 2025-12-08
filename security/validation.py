@@ -1,5 +1,7 @@
 import re
 from markupsafe import escape
+import json
+import os
 
 EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 
@@ -49,3 +51,17 @@ def is_suspicious_payload(text: str) -> bool:
         return False
     lower = text.lower()
     return any(pat in lower for pat in SUSPICIOUS_PATTERNS)
+
+
+
+# Mevcut dosyanın bulunduğu dizini al
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROFILE_PATH = os.path.join(BASE_DIR, 'sanitization_profiles.json')
+
+def load_profiles():
+    with open(PROFILE_PATH, 'r') as f:
+        return json.load(f)
+
+# Kuralları yükle
+security_rules = load_profiles()
+print(security_rules["profiles"]["email"]["regex_pattern"]) # Örnek kullanım

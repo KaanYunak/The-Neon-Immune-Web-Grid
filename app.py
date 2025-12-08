@@ -1,7 +1,17 @@
+from security.bruteforce_protection import (
+    is_blocked,
+    register_failed_attempt,
+    reset_attempts,
+    get_retry_after,
+)
+
+
 from flask import (
     Flask, request, session, redirect, url_for,
     render_template_string, g
 )
+
+from security.validation_firewall import run_validation_firewall
 
 from honeypot.routes import honeypot_bp
 from middleware import BehaviorEngineMiddleware
@@ -32,6 +42,14 @@ app.wsgi_app = BehaviorEngineMiddleware(app)
 # Honeypot blueprint entegrasyonu
 app.register_blueprint(honeypot_bp)
 
+@app.before_request
+def validation_firewall_hook():
+    # Honeypot veya statik dosyalar hariç her şeyi tarayabilirsin;
+    # istersen burada path'e göre filtre de koyarsın.
+    from flask import request
+
+    if not run_validation_firewall(request):
+        return "Request blocked by Validation Firewall.", 400
 
 @app.before_request
 def attach_current_user():
@@ -88,6 +106,21 @@ def login():
     email = (request.form.get("email") or "").strip()
     password = request.form.get("password") or ""
 
+    identifier = f"{request.remote_addr}:{email or 'unknown'}"
+
+    if is_blocked(identifier):
+        retry_after = get_retry_after(identifier) or 0
+        secure_log("login_bruteforce_blocked", {
+            "email": email,
+            "ip": request.remote_addr,
+            "retry_after": retry_after,
+        })
+        return (
+            f"Too many failed attempts. Try again in {retry_after} seconds.",
+            429,
+            {"Retry-After": str(retry_after)},
+        )
+
     if not validate_email(email) or not validate_password(password):
         secure_log("login_failed_validation", {
             "email": email,
@@ -106,6 +139,7 @@ def login():
             "email": email,
             "ip": request.remote_addr,
         })
+        register_failed_attempt(identifier)
         csrf = generate_csrf_token()
         return render_template_string(
             LOGIN_TEMPLATE,
@@ -114,6 +148,7 @@ def login():
         )
 
     login_user(email)
+    reset_attempts(identifier)
     secure_log("login_success", {
         "email": email,
         "ip": request.remote_addr,
