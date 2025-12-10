@@ -1,44 +1,44 @@
 class AdaptiveResponseEngine:
     def __init__(self):
-        # Gelecekte burası veritabanından config çekecek
-        self.blocking_threshold = 80
-        self.tarpit_threshold = 50
-
-    def decide_response(self, threat_score, ip_address):
-        """
-        Tehdit skoruna göre aksiyon kararı verir.
-        Score: 0-100 arası bir risk puanı.
-        """
-        print(f"[ADAPTIVE ENGINE] Analyzing Threat Score: {threat_score} for IP: {ip_address}")
-
-        if threat_score >= self.blocking_threshold:
-            return {
-                "action": "BLOCK",
-                "detail": f"Immediate IP ban initiated for {ip_address}",
-                "http_status": 403
-            }
+        # Geçici Bellek (RAM) - Proje ilerleyince Redis/DB olabilir
+        self.blocked_ips = set()       # Kesin bloklananlar (Kara Liste)
+        self.suspicious_ips = {}       # {ip_adresi: toplam_ceza_puani}
         
-        elif threat_score >= self.tarpit_threshold:
-            return {
-                "action": "TARPIT",
-                "detail": "Delaying response times to waste attacker resources.",
-                "delay_seconds": 3.0,
-                "http_status": 200
-            }
-        
-        else:
-            return {
-                "action": "MONITOR",
-                "detail": "Logging activity for further analysis.",
-                "http_status": 200
-            }
+        # AYARLAR
+        self.BLOCK_THRESHOLD = 3       # Kaç puan ceza yerse bloklansın?
+        self.TARPIT_THRESHOLD = 1      # Kaç puanda yavaşlatma başlasın?
 
-# Basit test (Bu dosya direkt çalıştırılırsa)
-if __name__ == "__main__":
-    engine = AdaptiveResponseEngine()
-    
-    # Senaryo 1: Düşük tehdit
-    print(engine.decide_response(20, "192.168.1.5"))
-    
-    # Senaryo 2: Yüksek tehdit (Saldırı)
-    print(engine.decide_response(95, "10.0.0.66"))
+    def analyze_behavior(self, ip_address, risk_score=1):
+        """
+        Gelen IP'nin geçmiş suçlarını hatırlar, yeni suçu ekler ve kararı verir.
+        """
+        # 1. Zaten bloklu mu?
+        if ip_address in self.blocked_ips:
+            return "BLOCK"
+
+        # 2. Suç puanını artır (Birikimli Hafıza)
+        current_score = self.suspicious_ips.get(ip_address, 0) + risk_score
+        self.suspicious_ips[ip_address] = current_score
+
+        print(f"[ADAPTIVE ENGINE] IP: {ip_address} | Risk Score: {current_score}")
+
+        # 3. Karar Mekanizması
+        if current_score >= self.BLOCK_THRESHOLD:
+            self.blocked_ips.add(ip_address)
+            print(f"[ADAPTIVE ENGINE] ⛔️ THREAT NEUTRALIZED: IP {ip_address} BLOCKED.")
+            return "BLOCK"
+        
+        elif current_score >= self.TARPIT_THRESHOLD:
+            return "TARPIT"  # Yavaşlat
+        
+        return "MONITOR" # Sadece izle
+
+    def is_blocked(self, ip_address):
+        """Middleware veya Route kontrolü için yardımcı fonksiyon"""
+        return ip_address in self.blocked_ips
+
+    def reset_memory(self):
+        """Hafızayı temizlemek için (Self-Healing senaryosu)"""
+        self.blocked_ips.clear()
+        self.suspicious_ips.clear()
+        print("[ADAPTIVE ENGINE] Memory flushed. System healed.")

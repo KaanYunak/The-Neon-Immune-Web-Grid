@@ -1,0 +1,29 @@
+[
+    {
+        "timestamp": "2025-12-10T11:15:18.158490",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:admin Pass:123456",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-10T11:15:20.177340",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:admin Pass:password",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-10T11:15:22.184947",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:admin Pass:admin123",
+        "severity": "HIGH"
+    }
+]

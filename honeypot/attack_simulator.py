@@ -8,8 +8,8 @@ class AttackSimulator:
 
     def run_bruteforce(self, endpoint, username, wordlist):
         """
-        Basit Brute-Force simülasyonu.
-        Fake Admin paneline sürekli giriş dener.
+        Brute-Force simülasyonu.
+        Artık 403 (Bloklanma) durumunu da kontrol ediyor.
         """
         full_url = f"{self.target_url}{endpoint}"
         print(f"\n[ATTACK] Starting Brute Force on: {full_url}")
@@ -20,13 +20,19 @@ class AttackSimulator:
             start_time = time.time()
             
             try:
-                # POST isteği atıyoruz (Login denemesi)
+                # Login denemesi yap
                 response = requests.post(full_url, data={'username': username, 'password': password})
                 elapsed = time.time() - start_time
                 
-                # Eğer sunucu bizi 1.5 saniyeden fazla bekletiyorsa Honeypot çalışıyor demektir
-                if elapsed > 1.5:
-                    print(f" [FAILED] (Server delayed response by {elapsed:.2f}s - Tarpit Detected!)")
+                # --- YENİ EKLENEN KISIM: BLOK KONTROLÜ ---
+                if response.status_code == 403:
+                    print(f" [BLOCKED] ⛔️ Server blocked our IP! (Adaptive Defense Triggered)")
+                    print(" [INFO] Stopping attack loop as we are banned.")
+                    break
+                
+                # Tarpit Kontrolü
+                elif elapsed > 1.5:
+                    print(f" [TARPIT] Server delayed response by {elapsed:.2f}s")
                 else:
                     print(f" [FAILED] Status: {response.status_code}")
                     
@@ -37,21 +43,25 @@ class AttackSimulator:
     def run_sqli_test(self, endpoint):
         """
         SQL Injection (SQLi) simülasyonu.
-        API endpoint'ine zararlı karakterler gönderir.
+        Artık ciddi saldırılarda bloklanmayı da bekliyor.
         """
         print(f"\n[ATTACK] Starting SQL Injection Test on: {endpoint}")
+        # Not: Adaptive Engine, SQLi için 3 puan verip direkt bloklayacak şekilde ayarlandı.
         payloads = ["' OR '1'='1", "admin' --", "UNION SELECT 1,2,3"]
         
         for payload in payloads:
-            # Payload'ı URL'e ekleyip GET isteği atıyoruz
             target = f"{self.target_url}{endpoint}?id={payload}"
             print(f"  -> Injecting: {payload} ...", end='', flush=True)
             
             try:
                 response = requests.get(target)
                 
-                # Sahte SQL hatasını yakalarsak başarılı sayıyoruz
-                if "SQLSyntaxError" in response.text:
+                if response.status_code == 403:
+                     print(f" [BLOCKED] ⛔️ Server detected SQLi and blocked IP!")
+                     break
+
+                # Sahte SQL hatasını yakalarsak
+                elif "SQLSyntaxError" in response.text:
                     print(" [SUCCESS] Honeypot triggered fake SQL error!")
                 else:
                     print(f" [No Reaction] Status: {response.status_code}")
@@ -63,8 +73,10 @@ if __name__ == "__main__":
     simulator = AttackSimulator("http://127.0.0.1:5000")
     
     # 1. Senaryo: Admin paneline kaba kuvvet saldırısı
-    passwords = ["123456", "password", "admin123", "qwerty"]
+    # Listeye 5 şifre koyduk, Threshold 3 olduğu için 4. denemede bloklanmalıyız.
+    passwords = ["123456", "password", "admin123", "qwerty", "must_be_blocked"]
     simulator.run_bruteforce("/admin-panel", "admin", passwords)
     
-    # 2. Senaryo: API'ye SQL Injection saldırısı
+    # 2. Senaryo: Eğer hala bloklanmadıysak SQLi dene
+    # (Genelde yukarıda bloklanınca burası da 403 döner)
     simulator.run_sqli_test("/api/v1/user-data")
