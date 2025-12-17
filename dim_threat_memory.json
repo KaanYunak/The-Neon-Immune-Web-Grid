@@ -781,5 +781,167 @@
         "target_endpoint": "/admin-panel",
         "payload_captured": "User:None",
         "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:00.319831",
+        "module": "HONEYPOT",
+        "threat_type": "FILE_INCLUSION",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/.env",
+        "payload_captured": "Probe on /.env",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:00.836912",
+        "module": "HONEYPOT",
+        "threat_type": "DATA_LEAK",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/backup.sql",
+        "payload_captured": "Probe on /backup.sql",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:01.347985",
+        "module": "HONEYPOT",
+        "threat_type": "RCE_ATTEMPT",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/shell",
+        "payload_captured": "Probe on /shell",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:02.376698",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:04.394970",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:06.401498",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:35:08.416067",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:20.559010",
+        "module": "HONEYPOT",
+        "threat_type": "FILE_INCLUSION",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/.env",
+        "payload_captured": "Probe on /.env",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:21.074260",
+        "module": "HONEYPOT",
+        "threat_type": "DATA_LEAK",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/backup.sql",
+        "payload_captured": "Probe on /backup.sql",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:21.585507",
+        "module": "HONEYPOT",
+        "threat_type": "RCE_ATTEMPT",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/shell",
+        "payload_captured": "Probe on /shell",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:22.611319",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:24.624169",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:26.634476",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:28.650468",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:None",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:52.482731",
+        "module": "HONEYPOT",
+        "threat_type": "FILE_INCLUSION",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/.env",
+        "payload_captured": "Probe on /.env",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:52.998237",
+        "module": "HONEYPOT",
+        "threat_type": "RCE_ATTEMPT",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/shell",
+        "payload_captured": "Probe on /shell",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:53.511404",
+        "module": "HONEYPOT",
+        "threat_type": "DATA_LEAK",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/backup.sql",
+        "payload_captured": "Probe on /backup.sql",
+        "severity": "HIGH"
+    },
+    {
+        "timestamp": "2025-12-17T22:37:54.028099",
+        "module": "HONEYPOT",
+        "threat_type": "BruteForce",
+        "attacker_ip": "127.0.0.1",
+        "target_endpoint": "/admin-panel",
+        "payload_captured": "User:replay_bot",
+        "severity": "HIGH"
     }
 ]
