@@ -1,44 +1,57 @@
+import time
+
 class AdaptiveResponseEngine:
     def __init__(self):
-        # Geçici Bellek (RAM) - Proje ilerleyince Redis/DB olabilir
-        self.blocked_ips = set()       # Kesin bloklananlar (Kara Liste)
-        self.suspicious_ips = {}       # {ip_adresi: toplam_ceza_puani}
+        # HAFTA 4 GÜNCELLEMESİ: Self-Healing için yapı değişikliği
+        # Eskiden sadece set() idi, şimdi {ip: kilit_acilma_zamani} sözlüğü oldu.
+        self.blocked_ips = {} 
+        self.suspicious_ips = {} 
         
         # AYARLAR
-        self.BLOCK_THRESHOLD = 3       # Kaç puan ceza yerse bloklansın?
-        self.TARPIT_THRESHOLD = 1      # Kaç puanda yavaşlatma başlasın?
+        self.BLOCK_THRESHOLD = 5   # Bloklanma sınırı
+        self.BLOCK_DURATION = 30   # Kaç saniye bloklu kalsın? (Test için kısa tuttuk)
 
     def analyze_behavior(self, ip_address, risk_score=1):
         """
-        Gelen IP'nin geçmiş suçlarını hatırlar, yeni suçu ekler ve kararı verir.
+        Gelen IP'yi analiz eder. Eğer blok süresi dolmuşsa affeder (Self-Healing).
         """
-        # 1. Zaten bloklu mu?
+        # 1. SELF-HEALING KONTROLÜ (Kendini İyileştirme)
         if ip_address in self.blocked_ips:
-            return "BLOCK"
+            unlock_time = self.blocked_ips[ip_address]
+            
+            if time.time() > unlock_time:
+                # Süre dolmuş, IP'yi affet
+                del self.blocked_ips[ip_address]
+                self.suspicious_ips[ip_address] = 0 # Sicilini temizle
+                print(f"[SELF-HEALING] 🩹 Timer expired. IP {ip_address} has been UNBLOCKED.")
+            else:
+                # Süre dolmamış, hala bloklu
+                remaining = int(unlock_time - time.time())
+                print(f"[BLOCKED] IP {ip_address} is in penalty box for {remaining}s more.")
+                return "BLOCK"
 
-        # 2. Suç puanını artır (Birikimli Hafıza)
+        # 2. RİSK PUANLAMA
         current_score = self.suspicious_ips.get(ip_address, 0) + risk_score
         self.suspicious_ips[ip_address] = current_score
 
-        print(f"[ADAPTIVE ENGINE] IP: {ip_address} | Risk Score: {current_score}")
+        print(f"[ADAPTIVE ENGINE] IP: {ip_address} | Score: {current_score}/{self.BLOCK_THRESHOLD}")
 
-        # 3. Karar Mekanizması
+        # 3. KARAR ANI
         if current_score >= self.BLOCK_THRESHOLD:
-            self.blocked_ips.add(ip_address)
-            print(f"[ADAPTIVE ENGINE] ⛔️ THREAT NEUTRALIZED: IP {ip_address} BLOCKED.")
+            # Şu anki zamana blok süresini ekle
+            self.blocked_ips[ip_address] = time.time() + self.BLOCK_DURATION
+            print(f"[ADAPTIVE ENGINE] ⛔️ THREAT NEUTRALIZED: IP {ip_address} BLOCKED for {self.BLOCK_DURATION}s.")
             return "BLOCK"
         
-        elif current_score >= self.TARPIT_THRESHOLD:
-            return "TARPIT"  # Yavaşlat
-        
-        return "MONITOR" # Sadece izle
+        return "MONITOR"
 
     def is_blocked(self, ip_address):
-        """Middleware veya Route kontrolü için yardımcı fonksiyon"""
-        return ip_address in self.blocked_ips
-
-    def reset_memory(self):
-        """Hafızayı temizlemek için (Self-Healing senaryosu)"""
-        self.blocked_ips.clear()
-        self.suspicious_ips.clear()
-        print("[ADAPTIVE ENGINE] Memory flushed. System healed.")
+        """Middleware için kontrol fonksiyonu. Süre dolduysa 'Bloklu Değil' der."""
+        if ip_address in self.blocked_ips:
+            # Kontrol anında süre dolmuş mu bak
+            if time.time() > self.blocked_ips[ip_address]:
+                del self.blocked_ips[ip_address]
+                self.suspicious_ips[ip_address] = 0
+                return False # Artık bloklu değil
+            return True # Hala bloklu
+        return False

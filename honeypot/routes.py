@@ -1,56 +1,82 @@
-from flask import Blueprint, render_template, request, jsonify, abort
+from flask import Blueprint, render_template, request, jsonify, abort, Response
 import time
-# Yeni yazdığımız modülleri dahil ediyoruz
+# Modülleri Dahil Et
 from honeypot.dim_logger import DIMLogger
 from honeypot.adaptive_response_engine import AdaptiveResponseEngine
+# HAFTA 4 YENİLİĞİ: Tuzak Çeşitliliği
+from honeypot.honeypot_types import HONEYPOT_TEMPLATES
+
+# --- VERİTABANI MODÜLÜ ---
+from honeypot.database import log_attack_to_db
 
 honeypot_bp = Blueprint('honeypot', __name__, template_folder='templates')
 
-# Modülleri Başlat (Beyin ve Hafıza Devrede)
+# Modülleri Başlat
 dim_logger = DIMLogger()
 adaptive_engine = AdaptiveResponseEngine()
 
 # --- GÜVENLİK DUVARI (Middleware) ---
 @honeypot_bp.before_request
 def check_blocklist():
-    """
-    Her istekten önce çalışır. 
-    Eğer IP adresi Adaptive Engine tarafından bloklanmışsa, kapıdan içeri almaz.
-    """
+    """Adaptive Engine tarafından bloklanan IP'leri engeller."""
     ip = request.remote_addr
+    
+    # --- MAJESTELERİ İÇİN DOKUNULMAZLIK (WHITELIST) ---
+    # Eğer gelen sizseniz (localhost), ban listesini kontrol etmeden geçiş verin.
+    if ip == "127.0.0.1":
+        return None 
+    # --------------------------------------------------
+
     if adaptive_engine.is_blocked(ip):
-        # Saldırgan bloklandıysa 403 Forbidden dön ve bağlantıyı kes
-        abort(403, description="Access Denied: Your IP has been flagged by Neon Immune Grid.")
+        abort(403, description="Neon Immune System: Access Denied via Adaptive Defense.")
 
-# --- GÖREV: Honeypot Generator (Dinamik Tuzaklar) ---
-# Bu yollar gerçekte yok ama saldırgan tarama yaparsa tuzağa düşecek.
-generated_fake_endpoints = ['/admin-login', '/secure/db', '/config.php', '/wp-admin', '/backup.sql']
-
+# --- HAFTA 4: Adaptive & Dynamic Honeypot Behavior ---
 @honeypot_bp.route('/<path:dummy_path>', methods=['GET', 'POST'])
 def dynamic_honeypot(dummy_path):
-    """
-    Tanımsız ama tuzak listesinde olan yollara gelen istekleri yakalar.
-    """
     path = f"/{dummy_path}"
+    ip = request.remote_addr
     
-    # Eğer gidilen yol tuzak listesindeyse:
-    if path in generated_fake_endpoints:
-        ip = request.remote_addr
-        
-        # 1. Hafızaya Yaz (DIM)
-        dim_logger.log_threat("Scanning/Probing", ip, f"Accessed honeypot: {path}", path)
-        
-        # 2. Risk Puanını Artır (Adaptive Engine)
-        adaptive_engine.analyze_behavior(ip, risk_score=1)
-        
-        # 3. Sahte bir hata sayfası göster
-        return render_template('fake_admin.html', error="System Error: Resource integrity verification failed. Logged.")
+    # Gelen isteği şablonlarımızla karşılaştırıyoruz
+    matched_template = None
+    for key, config in HONEYPOT_TEMPLATES.items():
+        if path == config['path']:
+            matched_template = config
+            break
     
-    # Tuzak değilse normal 404 hatası ver (Normal kullanıcıyı etkileme)
+    # EĞER BİR TUZAĞA DENK GELDİYSE:
+    if matched_template:
+        threat_type = matched_template['type']
+        risk = matched_template['risk_weight']
+
+        # [YENİ] 1. Veritabanına Kaydet (Kalıcı Hafıza)
+        log_attack_to_db(ip, threat_type, path, risk)
+        
+        # 2. Hafızaya Yaz (DIM)
+        dim_logger.log_threat(threat_type, ip, f"Probe on {path}", path)
+        
+        # 3. Risk Puanı İşle (Adaptive Engine)
+        action = adaptive_engine.analyze_behavior(ip, risk_score=risk)
+        
+        # Sadece gerçek saldırganları blokla, localhost'u test için bloklama
+        if action == "BLOCK" and ip != "127.0.0.1":
+            abort(403)
+
+        # 4. Uyarlanabilir Yanıt (Adaptive Behavior)
+        resp_type = matched_template['response_type']
+        content = matched_template['fake_content']
+
+        if resp_type == "json":
+            return jsonify(content), 401 
+        elif resp_type == "text":
+            return Response(content, mimetype='text/plain')
+        elif resp_type == "html":
+            return render_template(content, error="Legacy System: Migrated.")
+            
+    # Tuzak değilse normal 404
     abort(404)
 
 
-# --- GÖREV: Fake Admin Panel (Akıllandırılmış Sürüm) ---
+# --- GÖREV: Fake Admin Panel ---
 @honeypot_bp.route('/admin-panel', methods=['GET', 'POST'])
 def fake_admin():
     ip = request.remote_addr
@@ -59,44 +85,43 @@ def fake_admin():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # 1. Logla (DIM Entegrasyonu)
-        dim_logger.log_threat("BruteForce", ip, f"User:{username} Pass:{password}", "/admin-panel")
+        # [YENİ] Veritabanına Kaydet
+        log_attack_to_db(ip, "BruteForce", "/admin-panel", 1)
+
+        dim_logger.log_threat("BruteForce", ip, f"User:{username}", "/admin-panel")
         
-        # 2. Analiz Et ve Karar Ver (Adaptive Response)
-        # Her yanlış deneme 1 risk puanı ekler.
+        # Brute Force girişimi
         action = adaptive_engine.analyze_behavior(ip, risk_score=1)
         
-        # 3. Oyalama (Tarpit)
-        time.sleep(2) 
+        time.sleep(2) # Tarpit
         
-        # Eğer motor "BLOCK" emri verdiyse sistemi kilitle
-        if action == "BLOCK":
+        if action == "BLOCK" and ip != "127.0.0.1":
             abort(403)
 
-        return render_template('fake_admin.html', error="Invalid credentials. Attempts logged.")
+        return render_template('fake_admin.html', error="Invalid credentials. Logged.")
         
     return render_template('fake_admin.html')
 
-# --- GÖREV: Fake DB Endpoint (SQLi Algılama ve Bloklama) ---
+# --- GÖREV: Fake DB Endpoint ---
 @honeypot_bp.route('/api/v1/user-data', methods=['GET'])
 def fake_db():
     user_id = request.args.get('id')
     ip = request.remote_addr
     
-    # SQL Injection İmzası Kontrolü
     if user_id and ("'" in user_id or "OR" in user_id.upper() or "UNION" in user_id.upper()):
         
-        # Logla ve Yüksek Risk Puanı Ver
+        # [YENİ] Veritabanına Kaydet
+        log_attack_to_db(ip, "SQLInjection", "/api/v1/user-data", 3)
+        
         dim_logger.log_threat("SQLInjection", ip, f"Payload: {user_id}", "/api/v1/user-data")
         
-        # SQL Injection çok ciddi bir suçtur, direkt 3 puan verip bloklayabiliriz.
+        # SQL Injection kritik
         adaptive_engine.analyze_behavior(ip, risk_score=3) 
 
-        # Saldırganı kandırmak için sahte MySQL hatası dön
         return jsonify({
             "error": "SQLSyntaxError", 
             "code": 1064,
-            "message": "You have an error in your SQL syntax near '" + user_id + "'"
+            "message": f"You have an error in your SQL syntax near '{user_id}'"
         }), 500
 
     return jsonify({"status": "ok", "data": "Restricted Access"})
