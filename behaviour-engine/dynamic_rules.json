@@ -1,5 +1,11 @@
 {
   "threshold": 100,
+  "whitelist": [
+    "/static/",
+    "/images/",
+    "/favicon.ico",
+    "/css/"
+  ],
   "rules": [
     {
       "name": "SQL Injection Attempt",
