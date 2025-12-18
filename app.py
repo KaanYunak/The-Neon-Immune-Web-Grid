@@ -1,3 +1,7 @@
+import json
+import os
+
+
 from security.bruteforce_protection import (
     is_blocked,
     register_failed_attempt,
@@ -44,18 +48,38 @@ app.register_blueprint(honeypot_bp)
 
 @app.before_request
 def validation_firewall_hook():
-    # Honeypot veya statik dosyalar hariç her şeyi tarayabilirsin;
-    # istersen burada path'e göre filtre de koyarsın.
-    from flask import request
+    # (opsiyonel) whitelist: honeypot/static vs skip
+    # if request.path.startswith("/admin-panel") or request.path.startswith("/static"):
+    #     return None
 
     if not run_validation_firewall(request):
+        secure_log(
+            "request_blocked_by_validation_firewall",
+            {"reason": "payload_detected"},
+            level="WARN",
+            ip=request.remote_addr,
+            path=request.path,
+            user=session.get("user_email"),
+            session_id=session.get("session_id"),
+        )
         return "Request blocked by Validation Firewall.", 400
+
+    
+
+  
+
 
 @app.before_request
 def attach_current_user():
     """Her istekte oturumdaki kullanıcıyı g.current_user içine koy."""
     g.current_user = get_current_user()
 
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-XSS-Protection", "1; mode=block")
+    return response
 
 # ==========================
 # Authentication & Session
@@ -236,6 +260,59 @@ def admin_dashboard():
         email=sanitize_text(user["email"]),
         role=user["role"],
     )
+# ==========================
+# Security Policy Management (Week 4)
+# ==========================
+
+
+
+POLICY_FILE = os.path.join("security", "policy_store.json")
+
+def _read_policy():
+    with open(POLICY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def _write_policy(p):
+    with open(POLICY_FILE, "w", encoding="utf-8") as f:
+        json.dump(p, f, indent=2, ensure_ascii=False)
+
+
+@app.route("/security/policy", methods=["GET"])
+@login_required
+@role_required("admin", "security")
+def view_policy():
+    return _read_policy(), 200
+
+
+@app.route("/security/policy/blacklist-ip", methods=["POST"])
+@login_required
+@role_required("admin", "security")
+def add_blacklist_ip():
+    ip = (request.form.get("ip") or "").strip()
+    if not ip:
+        return {"error": "ip required"}, 400
+    p = _read_policy()
+    if ip not in p["blacklist_ips"]:
+        p["blacklist_ips"].append(ip)
+    _write_policy(p)
+    secure_log("policy_blacklist_ip_added", {"ip": ip}, level="WARN", user=session.get("user_email"), ip=request.remote_addr, path=request.path)
+    return {"ok": True, "blacklist_ips": p["blacklist_ips"]}, 200
+
+
+@app.route("/security/policy/whitelist-path", methods=["POST"])
+@login_required
+@role_required("admin", "security")
+def add_whitelist_path():
+    path = (request.form.get("path") or "").strip()
+    if not path.startswith("/"):
+        return {"error": "path must start with /"}, 400
+    p = _read_policy()
+    if path not in p["whitelist_paths"]:
+        p["whitelist_paths"].append(path)
+    _write_policy(p)
+    secure_log("policy_whitelist_path_added", {"path": path}, level="INFO", user=session.get("user_email"), ip=request.remote_addr, path=request.path)
+    return {"ok": True, "whitelist_paths": p["whitelist_paths"]}, 200
+
 
 
 # ==========================

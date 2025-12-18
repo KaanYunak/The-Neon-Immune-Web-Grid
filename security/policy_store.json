@@ -1,0 +1,6 @@
+{
+  "whitelist_paths": ["/", "/login", "/logout", "/dashboard/user", "/dashboard/admin"],
+  "blacklist_ips": [],
+  "blocked_user_agents": [],
+  "suspicious_path_patterns": ["(?i)\\.\\./", "(?i)<script", "(?i)union\\s+select", "(?i)or\\s+1=1"]
+}
