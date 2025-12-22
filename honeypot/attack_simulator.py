@@ -53,7 +53,7 @@ class AttackSimulator:
             pass
 
 if __name__ == "__main__":
-    sim = AttackSimulator("http://127.0.0.1:5000")
+    sim = AttackSimulator("http://127.0.0.1:5001")
     
     # 1. Çeşitlilik Testi (Yeni Endpointler)
     sim.test_honeypot_diversity()
