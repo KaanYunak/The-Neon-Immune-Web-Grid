@@ -4,67 +4,59 @@ import time
 class AttackSimulator:
     def __init__(self, target_url):
         self.target_url = target_url.rstrip('/')
-        print(f"[INFO] Attack Simulator initialized for target: {self.target_url}")
+        print(f"[INFO] Attack Simulator initialized: {self.target_url}")
 
-    def run_bruteforce(self, endpoint, username, wordlist):
-        """
-        Basit Brute-Force simülasyonu.
-        Fake Admin paneline sürekli giriş dener.
-        """
-        full_url = f"{self.target_url}{endpoint}"
-        print(f"\n[ATTACK] Starting Brute Force on: {full_url}")
-        print(f"[CONFIG] Target User: {username}")
+    def test_honeypot_diversity(self):
+        """Hafta 4: Farklı tuzak tiplerini ve Adaptive Behavior'ı test eder."""
+        print("\n[ATTACK] Starting Dynamic Honeypot Diversity Test...")
         
-        for password in wordlist:
-            print(f"  -> Trying password: {password}...", end='', flush=True)
-            start_time = time.time()
-            
-            try:
-                # POST isteği atıyoruz (Login denemesi)
-                response = requests.post(full_url, data={'username': username, 'password': password})
-                elapsed = time.time() - start_time
-                
-                # Eğer sunucu bizi 1.5 saniyeden fazla bekletiyorsa Honeypot çalışıyor demektir
-                if elapsed > 1.5:
-                    print(f" [FAILED] (Server delayed response by {elapsed:.2f}s - Tarpit Detected!)")
-                else:
-                    print(f" [FAILED] Status: {response.status_code}")
-                    
-            except requests.exceptions.ConnectionError:
-                print(" [ERROR] Server down! Make sure app.py is running.")
-                break
+        # Farklı endpointler ve beklenen davranışlar
+        scenarios = [
+            {"path": "/.env", "name": "Sensitive File Probe", "desc": "Dosya Okuma Saldırısı"},
+            {"path": "/backup.sql", "name": "DB Leak Probe", "desc": "Veritabanı Sızıntı Testi"},
+            {"path": "/shell", "name": "IoT Command Injection", "desc": "Komut Çalıştırma"},
+            {"path": "/random-page-123", "name": "Random 404", "desc": "Normal Hata"}
+        ]
 
-    def run_sqli_test(self, endpoint):
-        """
-        SQL Injection (SQLi) simülasyonu.
-        API endpoint'ine zararlı karakterler gönderir.
-        """
-        print(f"\n[ATTACK] Starting SQL Injection Test on: {endpoint}")
-        payloads = ["' OR '1'='1", "admin' --", "UNION SELECT 1,2,3"]
-        
-        for payload in payloads:
-            # Payload'ı URL'e ekleyip GET isteği atıyoruz
-            target = f"{self.target_url}{endpoint}?id={payload}"
-            print(f"  -> Injecting: {payload} ...", end='', flush=True)
-            
+        for case in scenarios:
+            url = f"{self.target_url}{case['path']}"
+            print(f"  -> Testing {case['name']} ({url})...", end='', flush=True)
             try:
-                response = requests.get(target)
+                response = requests.get(url)
                 
-                # Sahte SQL hatasını yakalarsak başarılı sayıyoruz
-                if "SQLSyntaxError" in response.text:
-                    print(" [SUCCESS] Honeypot triggered fake SQL error!")
+                if response.status_code == 403:
+                    print(" [BLOCKED] ⛔ Adaptive Defense triggered!")
+                elif response.status_code == 401:
+                    print(" [TRAPPED] 🎣 Caught by JSON Trap (401)")
+                elif response.status_code == 404:
+                    print(" [IGNORED] Standard 404 (Correct behavior for non-traps)")
+                elif response.status_code == 200:
+                    print(" [TRAPPED] 🎣 Caught by Fake File/HTML Trap")
                 else:
-                    print(f" [No Reaction] Status: {response.status_code}")
+                    print(f" [STATUS: {response.status_code}]")
             except Exception as e:
                 print(f" [ERROR] {e}")
+            
+            time.sleep(0.5)
+
+    def run_bruteforce(self):
+        print("\n[ATTACK] Quick Brute-Force Check...")
+        try:
+            # Hızlıca 3-4 istek atıp bloklanmayı kontrol et
+            for i in range(4):
+                res = requests.post(f"{self.target_url}/admin-panel", data={"u":"admin", "p":"123"})
+                if res.status_code == 403:
+                    print(f"  -> Request {i+1}: [BLOCKED] ⛔ System locked us out.")
+                    return
+                print(f"  -> Request {i+1}: {res.status_code}")
+        except:
+            pass
 
 if __name__ == "__main__":
-    # Localhost'taki sunucumuza saldıracağız
-    simulator = AttackSimulator("http://127.0.0.1:5000")
+    sim = AttackSimulator("http://127.0.0.1:5001")
     
-    # 1. Senaryo: Admin paneline kaba kuvvet saldırısı
-    passwords = ["123456", "password", "admin123", "qwerty"]
-    simulator.run_bruteforce("/admin-panel", "admin", passwords)
+    # 1. Çeşitlilik Testi (Yeni Endpointler)
+    sim.test_honeypot_diversity()
     
-    # 2. Senaryo: API'ye SQL Injection saldırısı
-    simulator.run_sqli_test("/api/v1/user-data")
+    # 2. Bloklama Testi
+    sim.run_bruteforce()
