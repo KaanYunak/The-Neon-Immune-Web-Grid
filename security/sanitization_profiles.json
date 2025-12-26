@@ -1,0 +1,42 @@
+{
+    "description": "The Neon Immune Web Grid - Input Sanitization & Validation Rules",
+    "version": "1.0",
+    "profiles": {
+      "username": {
+        "type": "string",
+        "min_length": 3,
+        "max_length": 20,
+        "allowed_chars": "^[a-zA-Z0-9_]+$",
+        "action_on_fail": "block"
+      },
+      "email": {
+        "type": "string",
+        "regex_pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+        "action_on_fail": "block"
+      },
+      "general_input": {
+        "type": "string",
+        "max_length": 500,
+        "sanitize": true,
+        "blacklisted_chars": ["<", ">", "script", "alert", "eval", "document.cookie"],
+        "action_on_fail": "sanitize"
+      },
+      "id_parameter": {
+        "type": "integer",
+        "min_value": 1,
+        "action_on_fail": "block"
+      }
+    },
+    "threat_patterns": {
+      "sql_injection": [
+        "' OR '1'='1",
+        "UNION SELECT",
+        "; DROP TABLE"
+      ],
+      "xss": [
+        "<script>",
+        "javascript:",
+        "onload="
+      ]
+    }
+  }

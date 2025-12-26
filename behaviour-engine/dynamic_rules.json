@@ -1,0 +1,31 @@
+{
+  "threshold": 100,
+  "whitelist": [
+    "/static/",
+    "/images/",
+    "/favicon.ico",
+    "/css/"
+  ],
+  "rules": [
+    {
+      "name": "SQL Injection Attempt",
+      "pattern": "(UNION|SELECT|INSERT|DROP|ALTER)",
+      "score": 50
+    },
+    {
+      "name": "XSS Attempt",
+      "pattern": "<script.*?>",
+      "score": 40
+    },
+    {
+      "name": "Admin Path Scan",
+      "pattern": "(/admin|/config|/setup)",
+      "score": 30
+    },
+    {
+      "name": "Suspicious File Extension",
+      "pattern": "(\\.php|\\.jsp|\\.exe|\\.sh)$",
+      "score": 20
+    }
+  ]
+}
