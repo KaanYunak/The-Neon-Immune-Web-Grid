@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-class BehaviorEngineMiddleware:
-    """
-    Geçici (Mock) Middleware.
-    """
-    def __init__(self, app):
-        self.app = app.wsgi_app
-    
-    def __call__(self, environ, start_response):
-        # Gelen isteği aynen Flask'a ilet
-        return self.app(environ, start_response)
-=======
 # middleware.py
 from flask import Request
 from security.logging_secure import secure_log
@@ -81,4 +69,3 @@ class BehaviorEngineMiddleware:
             return [res_body]
 
         return self.wsgi_app(environ, start_response)
->>>>>>> main

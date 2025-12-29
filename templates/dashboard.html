@@ -194,7 +194,83 @@
                 <canvas id="timelineChart" height="100"></canvas>
             </div>
         </div>
+
+        <!-- Attack Simulation Panel -->
+        <div class="mt-6 bg-gray-800 rounded-lg border border-red-500/30 card-glow">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-semibold text-red-400 flex items-center">
+                    <span class="mr-2">⚔️</span> Attack Simulation Panel
+                </h2>
+                <p class="text-xs text-gray-500 mt-1">Test your defenses by simulating different attack types</p>
+            </div>
+            <div class="p-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+                <button onclick="runAttack('bruteforce')" class="bg-yellow-500/20 hover:bg-yellow-500/40 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">🔐</span>
+                    <span class="text-sm font-semibold">BruteForce</span>
+                </button>
+                <button onclick="runAttack('sqli')" class="bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">💉</span>
+                    <span class="text-sm font-semibold">SQL Injection</span>
+                </button>
+                <button onclick="runAttack('xss')" class="bg-orange-500/20 hover:bg-orange-500/40 border border-orange-500/50 text-orange-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">🎭</span>
+                    <span class="text-sm font-semibold">XSS Attack</span>
+                </button>
+                <button onclick="runAttack('file_probe')" class="bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/50 text-purple-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">📁</span>
+                    <span class="text-sm font-semibold">File Probe</span>
+                </button>
+                <button onclick="runAttack('full_suite')" class="bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500/50 text-cyan-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">🚀</span>
+                    <span class="text-sm font-semibold">Full Suite</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Defense Controls Panel -->
+        <div class="mt-6 bg-gray-800 rounded-lg border border-green-500/30 card-glow">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-semibold text-green-400 flex items-center">
+                    <span class="mr-2">🛡️</span> Defense Controls
+                </h2>
+            </div>
+            <div class="p-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+                <button onclick="runDefense('self_heal')" class="bg-green-500/20 hover:bg-green-500/40 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">💚</span>
+                    <span class="text-sm font-semibold">Self-Heal</span>
+                </button>
+                <button onclick="runDefense('view_blocked')" class="bg-yellow-500/20 hover:bg-yellow-500/40 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">⛔</span>
+                    <span class="text-sm font-semibold">Blocked IPs</span>
+                </button>
+                <button onclick="runDefense('system_status')" class="bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/50 text-blue-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">📊</span>
+                    <span class="text-sm font-semibold">System Status</span>
+                </button>
+                <button onclick="runDefense('clear_logs')" class="bg-gray-500/20 hover:bg-gray-500/40 border border-gray-500/50 text-gray-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">🗑️</span>
+                    <span class="text-sm font-semibold">Clear Logs</span>
+                </button>
+                <button onclick="runDefense('export_report')" class="bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/50 text-purple-400 px-4 py-3 rounded-lg transition flex flex-col items-center space-y-2">
+                    <span class="text-2xl">📄</span>
+                    <span class="text-sm font-semibold">Export Report</span>
+                </button>
+            </div>
+        </div>
     </main>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg border border-cyan-500/50 max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-cyan-400" id="modalTitle">Result</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[60vh]" id="modalContent">
+                <!-- Results will be shown here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 border-t border-cyan-500/30 py-4 mt-8">
@@ -416,6 +492,152 @@
             refreshThreats();
             // Auto-refresh every 10 seconds
             setInterval(refreshThreats, 10000);
+        });
+
+        // ==========================================
+        // ATTACK SIMULATION FUNCTIONS
+        // ==========================================
+        
+        async function runAttack(attackType) {
+            const attackNames = {
+                'bruteforce': '🔐 BruteForce Attack',
+                'sqli': '💉 SQL Injection Attack',
+                'xss': '🎭 XSS Attack',
+                'file_probe': '📁 File Probe Attack',
+                'full_suite': '🚀 Full Attack Suite'
+            };
+            
+            showModal(attackNames[attackType] || 'Attack', '<div class="text-center py-8"><span class="text-4xl animate-pulse">⚔️</span><p class="mt-4 text-gray-400">Running attack simulation...</p></div>');
+            
+            try {
+                const response = await fetch('/api/attack/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attack_type: attackType })
+                });
+                const data = await response.json();
+                
+                let html = '';
+                
+                // Summary
+                if (data.summary) {
+                    html += `
+                        <div class="grid grid-cols-4 gap-2 mb-4">
+                            <div class="bg-gray-700/50 p-3 rounded text-center">
+                                <p class="text-2xl font-bold text-white">${data.summary.total_requests || 0}</p>
+                                <p class="text-xs text-gray-400">Total</p>
+                            </div>
+                            <div class="bg-red-500/20 p-3 rounded text-center">
+                                <p class="text-2xl font-bold text-red-400">${data.summary.blocked || 0}</p>
+                                <p class="text-xs text-gray-400">Blocked</p>
+                            </div>
+                            <div class="bg-yellow-500/20 p-3 rounded text-center">
+                                <p class="text-2xl font-bold text-yellow-400">${data.summary.trapped || 0}</p>
+                                <p class="text-xs text-gray-400">Trapped</p>
+                            </div>
+                            <div class="bg-green-500/20 p-3 rounded text-center">
+                                <p class="text-2xl font-bold text-green-400">${data.summary.passed || 0}</p>
+                                <p class="text-xs text-gray-400">Passed</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Results
+                if (data.results && data.results.length > 0) {
+                    html += '<div class="space-y-2">';
+                    data.results.forEach(r => {
+                        const statusColor = r.status_code === 403 ? 'text-red-400' : r.status_code === 200 ? 'text-yellow-400' : 'text-gray-400';
+                        html += `
+                            <div class="bg-gray-700/30 p-2 rounded text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-cyan-400 font-mono text-xs">${r.endpoint}</span>
+                                    <span class="${statusColor}">[${r.status_code}]</span>
+                                </div>
+                                <p class="text-gray-400 text-xs mt-1">${r.message}</p>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+                
+                if (data.error) {
+                    html += `<div class="text-red-400 mt-4">Error: ${data.error}</div>`;
+                }
+                
+                updateModalContent(html || '<p class="text-gray-400">No results</p>');
+                
+                // Refresh threats after attack
+                setTimeout(refreshThreats, 1000);
+                
+            } catch (error) {
+                updateModalContent(`<div class="text-red-400">Error: ${error.message}</div>`);
+            }
+        }
+
+        // ==========================================
+        // DEFENSE CONTROL FUNCTIONS
+        // ==========================================
+        
+        async function runDefense(action) {
+            const actionNames = {
+                'self_heal': '💚 Self-Healing',
+                'view_blocked': '⛔ Blocked IPs',
+                'system_status': '📊 System Status',
+                'clear_logs': '🗑️ Clear Logs',
+                'export_report': '📄 Security Report'
+            };
+            
+            showModal(actionNames[action] || 'Defense Action', '<div class="text-center py-8"><span class="text-4xl animate-pulse">🛡️</span><p class="mt-4 text-gray-400">Processing...</p></div>');
+            
+            try {
+                const response = await fetch('/api/defense/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action })
+                });
+                const data = await response.json();
+                
+                let html = `<div class="text-${data.success ? 'green' : 'red'}-400 mb-4">${data.message}</div>`;
+                
+                if (data.data) {
+                    html += '<div class="bg-gray-700/30 p-4 rounded font-mono text-xs overflow-x-auto"><pre>' + JSON.stringify(data.data, null, 2) + '</pre></div>';
+                }
+                
+                updateModalContent(html);
+                
+                if (action === 'clear_logs') {
+                    setTimeout(refreshThreats, 500);
+                }
+                
+            } catch (error) {
+                updateModalContent(`<div class="text-red-400">Error: ${error.message}</div>`);
+            }
+        }
+
+        // ==========================================
+        // MODAL FUNCTIONS
+        // ==========================================
+        
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+        
+        function updateModalContent(content) {
+            document.getElementById('modalContent').innerHTML = content;
+        }
+        
+        function closeModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+        }
+        
+        // Close modal on outside click
+        document.getElementById('resultModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'resultModal') closeModal();
         });
     </script>
 </body>
